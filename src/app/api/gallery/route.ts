@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { writeFile } from 'fs/promises';
+import { writeFile, unlink } from 'fs/promises';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,12 +15,31 @@ if (!fs.existsSync(galleryDir)) {
 
 export async function GET() {
     try {
-        const files = fs.readdirSync(galleryDir);
-        const images = files
-            .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-            .map(file => `/gallery/${file}`);
-        return NextResponse.json(images);
+        let images = await prisma.galleryImage.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // Auto-migration: if DB is empty, check filesystem
+        if (images.length === 0) {
+            const files = fs.readdirSync(galleryDir);
+            const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
+
+            if (imageFiles.length > 0) {
+                const data = imageFiles.map(file => ({
+                    url: `/gallery/${file}`,
+                    name: file
+                }));
+
+                await prisma.galleryImage.createMany({ data });
+                images = await prisma.galleryImage.findMany({
+                    orderBy: { createdAt: 'desc' }
+                });
+            }
+        }
+
+        return NextResponse.json(images.map(img => img.url));
     } catch (error) {
+        console.error('Gallery GET error:', error);
         return NextResponse.json({ error: 'Failed to read gallery' }, { status: 500 });
     }
 }
@@ -37,12 +57,19 @@ export async function POST(request: Request) {
         const buffer = Buffer.from(bytes);
 
         // Sanitize filename
-        const filename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         const filepath = path.join(galleryDir, filename);
 
         await writeFile(filepath, buffer);
 
-        return NextResponse.json({ success: true, filename });
+        const newImage = await prisma.galleryImage.create({
+            data: {
+                url: `/gallery/${filename}`,
+                name: filename
+            }
+        });
+
+        return NextResponse.json({ success: true, filename, id: newImage.id });
     } catch (error) {
         console.error('Upload error:', error);
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
@@ -61,12 +88,22 @@ export async function DELETE(request: Request) {
         const safeFilename = path.basename(filename);
         const filepath = path.join(galleryDir, safeFilename);
 
+        // Delete from DB first
+        await prisma.galleryImage.deleteMany({
+            where: {
+                OR: [
+                    { name: safeFilename },
+                    { url: `/gallery/${safeFilename}` }
+                ]
+            }
+        });
+
+        // Delete from filesystem if it exists
         if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-            return NextResponse.json({ success: true });
-        } else {
-            return NextResponse.json({ error: 'File not found' }, { status: 404 });
+            await unlink(filepath);
         }
+
+        return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Delete error:', error);
         return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
