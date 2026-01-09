@@ -15,7 +15,7 @@ if (!fs.existsSync(galleryDir)) {
 
 export async function GET() {
     try {
-        let images = await prisma.galleryImage.findMany({
+        let images = await (prisma as any).galleryImage.findMany({
             orderBy: { createdAt: 'desc' }
         });
 
@@ -30,14 +30,14 @@ export async function GET() {
                     name: file
                 }));
 
-                await prisma.galleryImage.createMany({ data });
-                images = await prisma.galleryImage.findMany({
+                await (prisma as any).galleryImage.createMany({ data });
+                images = await (prisma as any).galleryImage.findMany({
                     orderBy: { createdAt: 'desc' }
                 });
             }
         }
 
-        return NextResponse.json(images.map(img => img.url));
+        return NextResponse.json(images.map((img: any) => img.url));
     } catch (error) {
         console.error('Gallery GET error:', error);
         return NextResponse.json({ error: 'Failed to read gallery' }, { status: 500 });
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
         await writeFile(filepath, buffer);
 
-        const newImage = await prisma.galleryImage.create({
+        const newImage = await (prisma as any).galleryImage.create({
             data: {
                 url: `/gallery/${filename}`,
                 name: filename
@@ -89,7 +89,7 @@ export async function DELETE(request: Request) {
         const filepath = path.join(galleryDir, safeFilename);
 
         // Delete from DB first
-        await prisma.galleryImage.deleteMany({
+        await (prisma as any).galleryImage.deleteMany({
             where: {
                 OR: [
                     { name: safeFilename },
