@@ -1,0 +1,202 @@
+/* RichEditor.module.css */
+.editorWrapper {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    align-items: center;
+}
+
+.divider {
+    width: 1px;
+    height: 24px;
+    background: #cbd5e1;
+    margin: 0 0.5rem;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.button:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.button.isActive {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.content {
+    padding: 2rem;
+    min-height: 400px;
+    max-height: 700px;
+    overflow-y: auto;
+    font-family: inherit;
+    line-height: 1.6;
+    outline: none;
+    background: white;
+}
+
+/* Tiptap Content Styles - Mimicking standard document */
+.content :global(.ProseMirror) {
+    outline: none;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.content :global(.ProseMirror p) {
+    margin-bottom: 1rem;
+}
+
+.content :global(.ProseMirror h1) {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    line-height: 1.1;
+}
+
+.content :global(.ProseMirror h2) {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.content :global(.ProseMirror h3) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.content :global(.ProseMirror ul),
+.content :global(.ProseMirror ol) {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.content :global(.ProseMirror blockquote) {
+    border-left: 4px solid #6366f1;
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #475569;
+}
+
+.content :global(.ProseMirror pre) {
+    background: #1e293b;
+    color: #f8fafc;
+    padding: 1rem;
+    border-radius: 6px;
+    font-family: monospace;
+    margin: 1rem 0;
+    overflow-x: auto;
+}
+
+.content :global(.ProseMirror img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1rem 0;
+    display: block;
+}
+
+.content :global(.ProseMirror img.ProseMirror-selectednode) {
+    outline: 3px solid #6366f1;
+}
+
+/* Tables */
+.content :global(.ProseMirror table) {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.content :global(.ProseMirror td),
+.content :global(.ProseMirror th) {
+    min-width: 1em;
+    border: 2px solid #ced4da;
+    padding: 3px 5px;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.content :global(.ProseMirror th) {
+    font-weight: bold;
+    text-align: left;
+    background-color: #f1f3f5;
+}
+
+.content :global(.ProseMirror .selectedCell:after) {
+    z-index: 2;
+    position: absolute;
+    content: "";
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(200, 200, 255, 0.4);
+    pointer-events: none;
+}
+
+/* Task Lists */
+.content :global(ul[data-type="taskList"]) {
+    list-style: none;
+    padding: 0;
+}
+
+.content :global(ul[data-type="taskList"] li) {
+    display: flex;
+    align-items: center;
+}
+
+.content :global(ul[data-type="taskList"] li > label) {
+    flex: 0 0 auto;
+    margin-right: 0.5rem;
+    user-select: none;
+}
+
+.content :global(ul[data-type="taskList"] li > div) {
+    flex: 1 1 auto;
+}
+
+/* Alignment */
+.content :global(.ProseMirror .is-editor-empty:first-child::before) {
+    color: #adb5bd;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+}

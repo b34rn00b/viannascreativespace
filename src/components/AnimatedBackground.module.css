@@ -1,0 +1,74 @@
+/* AnimatedBackground.module.css */
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    background: #fdfbf7;
+    /* Warm off-white/cream base - calmer */
+}
+
+.noise {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0.03;
+    /* Reduced opacity */
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    /* Increased blur for softer look */
+    opacity: 0.6;
+    /* Higher opacity but lighter colors */
+    animation: move 25s infinite alternate ease-in-out;
+}
+
+.blob1 {
+    top: -10%;
+    left: -10%;
+    width: 700px;
+    height: 700px;
+    background: #e0e7ff;
+    /* Soft Indigo/Blue */
+    animation-delay: 0s;
+}
+
+.blob2 {
+    bottom: -10%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: #fce7f3;
+    /* Soft Pink */
+    animation-delay: -5s;
+    animation-direction: alternate-reverse;
+}
+
+.blob3 {
+    top: 40%;
+    left: 40%;
+    width: 500px;
+    height: 500px;
+    background: #ede9fe;
+    /* Soft Purple */
+    animation-delay: -10s;
+    opacity: 0.5;
+}
+
+@keyframes move {
+    0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(50px, 30px) scale(1.1) rotate(10deg);
+    }
+}
