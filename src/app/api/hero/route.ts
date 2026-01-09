@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
 import path from 'path';
 import { writeFile } from 'fs/promises';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-const dataDir = path.join(process.cwd(), 'data');
-const heroFile = path.join(dataDir, 'hero.json');
 const publicDir = path.join(process.cwd(), 'public');
-
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-}
 
 // Default Hero Data
 const defaultHero = {
@@ -23,12 +16,10 @@ const defaultHero = {
 
 export async function GET() {
     try {
-        if (fs.existsSync(heroFile)) {
-            const fileContent = fs.readFileSync(heroFile, 'utf-8');
-            return NextResponse.json(JSON.parse(fileContent));
-        }
-        return NextResponse.json(defaultHero);
+        const hero = await prisma.hero.findFirst();
+        return NextResponse.json(hero || defaultHero);
     } catch (error) {
+        console.error('Hero GET error:', error);
         return NextResponse.json(defaultHero);
     }
 }
@@ -40,15 +31,15 @@ export async function POST(request: Request) {
         const subtitle = formData.get('subtitle') as string;
         const imageFile = formData.get('image') as File | null;
 
-        let config = defaultHero;
-        if (fs.existsSync(heroFile)) {
-            config = JSON.parse(fs.readFileSync(heroFile, 'utf-8'));
-        }
+        let existingHero = await prisma.hero.findFirst();
 
-        config.title = title || config.title;
-        config.subtitle = subtitle || config.subtitle;
+        const data: any = {
+            title: title || (existingHero?.title || defaultHero.title),
+            subtitle: subtitle || (existingHero?.subtitle || defaultHero.subtitle),
+            backgroundImage: existingHero?.backgroundImage || defaultHero.backgroundImage
+        };
 
-        if (imageFile) {
+        if (imageFile && imageFile.size > 0) {
             const bytes = await imageFile.arrayBuffer();
             const buffer = Buffer.from(bytes);
 
@@ -57,13 +48,22 @@ export async function POST(request: Request) {
             const filepath = path.join(publicDir, filename);
             await writeFile(filepath, buffer);
 
-            config.backgroundImage = `/${filename}`;
+            data.backgroundImage = `/${filename}`;
         }
 
-        // Save config
-        await writeFile(heroFile, JSON.stringify(config, null, 2));
+        let updatedHero;
+        if (existingHero) {
+            updatedHero = await prisma.hero.update({
+                where: { id: existingHero.id },
+                data
+            });
+        } else {
+            updatedHero = await prisma.hero.create({
+                data
+            });
+        }
 
-        return NextResponse.json({ success: true, config });
+        return NextResponse.json({ success: true, config: updatedHero });
     } catch (error) {
         console.error('Hero update error:', error);
         return NextResponse.json({ error: 'Update failed' }, { status: 500 });

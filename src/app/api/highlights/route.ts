@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
 import path from 'path';
 import { writeFile } from 'fs/promises';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-const dataDir = path.join(process.cwd(), 'data');
-const highlightsFile = path.join(dataDir, 'highlights.json');
 const publicDir = path.join(process.cwd(), 'public');
-
-// Ensure data directory exists
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-}
 
 // Default Highlights Data (3 items)
 const defaultHighlights = [
@@ -23,12 +16,13 @@ const defaultHighlights = [
 
 export async function GET() {
     try {
-        if (fs.existsSync(highlightsFile)) {
-            const fileContent = fs.readFileSync(highlightsFile, 'utf-8');
-            return NextResponse.json(JSON.parse(fileContent));
+        const highlights = await prisma.highlight.findMany();
+        if (highlights.length > 0) {
+            return NextResponse.json(highlights);
         }
         return NextResponse.json(defaultHighlights);
     } catch (error) {
+        console.error('Highlights GET error:', error);
         return NextResponse.json(defaultHighlights);
     }
 }
@@ -37,21 +31,18 @@ export async function POST(request: Request) {
     try {
         const formData = await request.formData();
 
-        let currentData = defaultHighlights;
-        if (fs.existsSync(highlightsFile)) {
-            currentData = JSON.parse(fs.readFileSync(highlightsFile, 'utf-8'));
-        }
-
-        const newItems = [...currentData];
+        const currentData = await prisma.highlight.findMany();
+        const items = currentData.length > 0 ? currentData : defaultHighlights.map(d => ({ ...d, id: undefined }));
 
         // Process up to 3 items
         for (let i = 0; i < 3; i++) {
-            const title = formData.get(`title_${i}`);
-            const link = formData.get(`link_${i}`);
+            const title = formData.get(`title_${i}`) as string;
+            const link = formData.get(`link_${i}`) as string;
             const imageFile = formData.get(`image_${i}`) as File | null;
 
-            if (title !== null) newItems[i].title = title as string;
-            if (link !== null) newItems[i].link = link as string;
+            const updateData: any = {};
+            if (title !== null) updateData.title = title;
+            if (link !== null) updateData.link = link;
 
             if (imageFile && imageFile.size > 0) {
                 const bytes = await imageFile.arrayBuffer();
@@ -63,14 +54,27 @@ export async function POST(request: Request) {
                 const filepath = path.join(publicDir, filename);
                 await writeFile(filepath, buffer);
 
-                newItems[i].image = `/${filename}`;
+                updateData.image = `/${filename}`;
+            }
+
+            if (currentData[i]) {
+                await prisma.highlight.update({
+                    where: { id: currentData[i].id },
+                    data: updateData
+                });
+            } else {
+                await prisma.highlight.create({
+                    data: {
+                        title: updateData.title || defaultHighlights[i].title,
+                        link: updateData.link || defaultHighlights[i].link,
+                        image: updateData.image || defaultHighlights[i].image
+                    }
+                });
             }
         }
 
-        // Save config
-        await writeFile(highlightsFile, JSON.stringify(newItems, null, 2));
-
-        return NextResponse.json({ success: true, items: newItems });
+        const updatedItems = await prisma.highlight.findMany();
+        return NextResponse.json({ success: true, items: updatedItems });
     } catch (error) {
         console.error('Highlights update error:', error);
         return NextResponse.json({ error: 'Update failed' }, { status: 500 });

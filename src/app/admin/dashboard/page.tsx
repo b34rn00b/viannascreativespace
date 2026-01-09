@@ -4,8 +4,8 @@ import DeleteButton from './DeleteButton'; // Client component for delete intera
 
 export const dynamic = 'force-dynamic';
 
-export default function Dashboard() {
-    const posts = getPosts();
+export default async function Dashboard() {
+    const posts = await getPosts();
 
     return (
         <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>

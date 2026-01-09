@@ -7,8 +7,8 @@ import ScrollReveal from '@/components/ScrollReveal';
 
 export const dynamic = 'force-dynamic';
 
-export default function BlogPage() {
-    const posts = getPosts();
+export default async function BlogPage() {
+    const posts = await getPosts();
 
     return (
         <main style={{ padding: '2rem' }}>

@@ -1,5 +1,4 @@
-import fs from 'fs';
-import path from 'path';
+import { prisma } from './prisma';
 
 export interface Post {
     id: string;
@@ -7,26 +6,31 @@ export interface Post {
     title: string;
     excerpt: string;
     content: string;
-    date: string;
+    date: string | Date;
     author: string;
-    image?: string;
+    image?: string | null;
 }
 
-const postsDirectory = path.join(process.cwd(), 'data');
-
-export function getPosts(): Post[] {
-    const filePath = path.join(postsDirectory, 'posts.json');
+export async function getPosts(): Promise<Post[]> {
     try {
-        const fileContents = fs.readFileSync(filePath, 'utf8');
-        const posts: Post[] = JSON.parse(fileContents);
-        return posts.sort((a, b) => (a.date < b.date ? 1 : -1));
+        const posts = await prisma.post.findMany({
+            orderBy: { date: 'desc' }
+        });
+        return posts as unknown as Post[];
     } catch (error) {
-        console.error("Error reading posts:", error);
+        console.error("Error fetching posts:", error);
         return [];
     }
 }
 
-export function getPostBySlug(slug: string): Post | undefined {
-    const posts = getPosts();
-    return posts.find((post) => post.slug === slug);
+export async function getPostBySlug(slug: string): Promise<Post | null> {
+    try {
+        const post = await prisma.post.findUnique({
+            where: { slug }
+        });
+        return post as unknown as Post;
+    } catch (error) {
+        console.error("Error fetching post by slug:", error);
+        return null;
+    }
 }

@@ -1,0 +1,33 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Hero {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  subtitle        String
+  backgroundImage String
+}
+
+model Post {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug    String   @unique
+  title   String
+  excerpt String
+  content String
+  date    DateTime @default(now())
+  author  String
+  image   String?
+}
+
+model Highlight {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  title String
+  image String
+  link  String
+}
