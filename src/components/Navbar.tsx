@@ -11,7 +11,6 @@ export default function Navbar() {
                 <Link href="/" className={styles.link}>Home</Link>
                 <Link href="/gallery" className={styles.link}>Gallery</Link>
                 <Link href="/blog" className={styles.link}>Blog</Link>
-                <Link href="/admin" className={styles.link}>Login</Link>
             </div>
         </nav>
     );
